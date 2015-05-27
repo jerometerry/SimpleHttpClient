@@ -27,12 +27,9 @@
 
         private static HttpRequest CreateRequest()
         {
-            var request = new HttpRequest
-            {
-                Path = "/", 
-                Port = 80, 
-                Domain = "www.google.ca"
-            };
+            var request = new HttpRequest();
+            request.Path = "/";
+            request.Domain = "www.google.ca";
             request.AddHeader("Host", "www.google.ca");
             request.AddHeader("Connection", "close");
             return request;
