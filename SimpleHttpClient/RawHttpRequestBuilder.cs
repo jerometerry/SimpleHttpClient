@@ -49,13 +49,5 @@
             rb.AddBlankLine();
             return rb.ToString();
         }
-
-        public static string GetAuthHeader(string userName, string password)
-        {
-            var authInfo = string.Format("{0}:{1}", userName, password);
-            authInfo = Convert.ToBase64String(Encoding.Default.GetBytes(authInfo));
-            authInfo = string.Format("Basic {0}", authInfo);
-            return authInfo;
-        }
     }
 }

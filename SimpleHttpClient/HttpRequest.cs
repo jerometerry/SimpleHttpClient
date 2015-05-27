@@ -1,5 +1,6 @@
 ﻿namespace SimpleHttpClient
 {
+    using System;
     using System.Collections.Generic;
     using System.Text;
 
@@ -25,6 +26,20 @@
         public void AddHeader(string name, string value)
         {
             Headers.Add(name, value);
+        }
+
+        public void SetCredentials(string userName, string password)
+        {
+            if (string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
+            {
+                return;
+            }
+
+            var authInfo = string.Format("{0}:{1}", userName, password);
+            authInfo = Convert.ToBase64String(Encoding.Default.GetBytes(authInfo));
+            authInfo = string.Format("Basic {0}", authInfo);
+            
+            AddHeader("Authorization", authInfo);
         }
     }
 }

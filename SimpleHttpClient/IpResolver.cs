@@ -2,6 +2,7 @@
 {
     using System;
     using System.Net;
+    using System.Net.Sockets;
 
     public static class IpResolver
     {
@@ -15,7 +16,17 @@
                     "hostName");
             }
 
-            return hostEntry.AddressList[0];
+            foreach (var addr in hostEntry.AddressList)
+            {
+                if (addr.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return addr;
+                }
+            }
+
+            throw new ArgumentException(
+                    "Unable to retrieve address from specified host name.",
+                    "hostName");
         }
     }
 }
