@@ -7,10 +7,26 @@
 
     public class HttpClient
     {
+        private int m_connectionTimeout;
+        private int m_sendTimeout;
+        private int m_recieveTimeout;
+
+        public HttpClient()
+            : this(60000, 60000, 60000)
+        {
+        }
+
+        public HttpClient(int connectionTimeout, int sendTimeout, int receiveTimeout)
+        {
+            m_connectionTimeout = connectionTimeout;
+            m_sendTimeout = sendTimeout;
+            m_recieveTimeout = receiveTimeout;
+        }
+
         public HttpResponse Get(
-            string route, 
-            string hostNameOrAddress, 
-            int port, 
+            string route,
+            string hostNameOrAddress,
+            int port,
             string host,
             string userName,
             string password)
@@ -20,7 +36,7 @@
             return ParseHttpResponse(response);
         }
 
-        private static string GetResponse(string hostNameOrAddress, int port, string request)
+        private string GetResponse(string hostNameOrAddress, int port, string request)
         {
             Socket socket = null;
             string response;
@@ -28,9 +44,15 @@
             try
             {
                 var ipAddress = ParseIPAddress(hostNameOrAddress);
-                var ip = CreateEndPoint(ipAddress, port);
-                socket = CreateSocket(ip.AddressFamily);
-                socket.Connect(ip);
+                socket = CreateSocket();
+
+                var result = socket.BeginConnect(ipAddress, port, null, null);
+                var success = result.AsyncWaitHandle.WaitOne(m_connectionTimeout, true);
+                if (!success)
+                {
+                    socket.Close();
+                    throw new ApplicationException("Failed to connect server.");
+                }
 
                 var httpRequestBytes = GetBytes(request);
 
@@ -50,15 +72,15 @@
 
         private static string CreateHttpRequest(
             string method,
-            string route, 
-            string host, 
-            string userName, 
+            string route,
+            string host,
+            string userName,
             string password)
         {
             var rb = new HttpRequestBuilder();
             rb.AddRequestLine(method, route, "HTTP/1.1");
             rb.AddHeader("Host", host);
-            
+
             if (!string.IsNullOrEmpty(userName) || !string.IsNullOrEmpty(password))
             {
                 rb.AddHeader("Authorization", GetAuthHeader(userName, password));
@@ -149,14 +171,13 @@
             return hostEntry.AddressList[0];
         }
 
-        private static Socket CreateSocket(AddressFamily addressFamily)
+        private Socket CreateSocket()
         {
-            return new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp);
-        }
-
-        private static IPEndPoint CreateEndPoint(IPAddress address, int port)
-        {
-            return new IPEndPoint(address, port);
+            return new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+            {
+                SendTimeout = m_sendTimeout,
+                ReceiveTimeout = m_recieveTimeout
+            };
         }
 
         private static string GetString(byte[] receiveByte, int bytes)

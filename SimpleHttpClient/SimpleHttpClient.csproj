@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HttpClient.cs" />
+    <Compile Include="HttpRequestBuilder.cs" />
     <Compile Include="HttpResponse.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
