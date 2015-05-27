@@ -15,7 +15,7 @@
             string userName,
             string password)
         {
-            var request = CreateHttpRequest(route, host, userName, password);
+            var request = CreateHttpRequest("GET", route, host, userName, password);
             var response = GetResponse(hostNameOrAddress, port, request);
             return ParseHttpResponse(response);
         }
@@ -49,26 +49,24 @@
         }
 
         private static string CreateHttpRequest(
+            string method,
             string route, 
             string host, 
             string userName, 
             string password)
         {
-            var sb = new StringBuilder();
-            sb.AppendFormat("GET {0} ", route);
-            sb.AppendFormat("HTTP/1.1{0}", Environment.NewLine);
-            sb.AppendFormat("Host: {0}{1}", host, Environment.NewLine);
-
+            var rb = new HttpRequestBuilder();
+            rb.AddRequestLine(method, route, "HTTP/1.1");
+            rb.AddHeader("Host", host);
+            
             if (!string.IsNullOrEmpty(userName) || !string.IsNullOrEmpty(password))
             {
-                var authInfo = GetAuthHeader(userName, password);
-                sb.AppendFormat("Authorization: {0}{1}", authInfo, Environment.NewLine);
+                rb.AddHeader("Authorization", GetAuthHeader(userName, password));
             }
 
-            sb.AppendFormat("Connection: Close{0}", Environment.NewLine);
-            sb.AppendFormat("{0}", Environment.NewLine);
-            var request = sb.ToString();
-            return request;
+            rb.AddHeader("Connection", "Close");
+            rb.AddBlankLine();
+            return rb.ToString();
         }
 
         private static string GetAuthHeader(string userName, string password)
