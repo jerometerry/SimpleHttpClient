@@ -15,6 +15,45 @@
             string userName,
             string password)
         {
+            var request = CreateHttpRequest(route, host, userName, password);
+            var response = GetResponse(hostNameOrAddress, port, request);
+            return ParseHttpResponse(response);
+        }
+
+        private static string GetResponse(string hostNameOrAddress, int port, string request)
+        {
+            Socket socket = null;
+            string response;
+
+            try
+            {
+                var ipAddress = ParseIPAddress(hostNameOrAddress);
+                var ip = CreateEndPoint(ipAddress, port);
+                socket = CreateSocket(ip.AddressFamily);
+                socket.Connect(ip);
+
+                var httpRequestBytes = GetBytes(request);
+
+                socket.Send(httpRequestBytes, httpRequestBytes.Length, 0);
+                response = GetHttpResponse(socket);
+            }
+            finally
+            {
+                if (socket != null)
+                {
+                    socket.Close();
+                }
+            }
+
+            return response;
+        }
+
+        private static string CreateHttpRequest(
+            string route, 
+            string host, 
+            string userName, 
+            string password)
+        {
             var sb = new StringBuilder();
             sb.AppendFormat("GET {0} ", route);
             sb.AppendFormat("HTTP/1.1{0}", Environment.NewLine);
@@ -22,29 +61,22 @@
 
             if (!string.IsNullOrEmpty(userName) || !string.IsNullOrEmpty(password))
             {
-                var authInfo = string.Format("{0}:{1}", userName, password);
-                authInfo = Convert.ToBase64String(Encoding.Default.GetBytes(authInfo));
-                authInfo = string.Format("Basic {0}", authInfo);
+                var authInfo = GetAuthHeader(userName, password);
                 sb.AppendFormat("Authorization: {0}{1}", authInfo, Environment.NewLine);
             }
 
             sb.AppendFormat("Connection: Close{0}", Environment.NewLine);
             sb.AppendFormat("{0}", Environment.NewLine);
             var request = sb.ToString();
+            return request;
+        }
 
-            var httpRequestBytes = GetBytes(request);
-
-            var ipAddress = ParseIPAddress(hostNameOrAddress);
-            var ip = CreateEndPoint(ipAddress, port);
-            var socket = CreateSocket(ip);
-            socket.Connect(ip);
-            
-            socket.Send(httpRequestBytes, httpRequestBytes.Length, 0);
-            var response = GetHttpResponse(socket);
-
-            socket.Close();
-
-            return ParseHttpResponse(response);
+        private static string GetAuthHeader(string userName, string password)
+        {
+            var authInfo = string.Format("{0}:{1}", userName, password);
+            authInfo = Convert.ToBase64String(Encoding.Default.GetBytes(authInfo));
+            authInfo = string.Format("Basic {0}", authInfo);
+            return authInfo;
         }
 
         private static string GetHttpResponse(Socket socket)
@@ -119,9 +151,9 @@
             return hostEntry.AddressList[0];
         }
 
-        private static Socket CreateSocket(IPEndPoint ip)
+        private static Socket CreateSocket(AddressFamily addressFamily)
         {
-            return new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            return new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
         private static IPEndPoint CreateEndPoint(IPAddress address, int port)
