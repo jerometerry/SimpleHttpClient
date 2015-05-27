@@ -33,8 +33,8 @@
                 Port = 80, 
                 Domain = "www.google.ca"
             };
-            request.Headers.Add("Host", "www.google.ca");
-            request.Headers.Add("Connection", "close");
+            request.AddHeader("Host", "www.google.ca");
+            request.AddHeader("Connection", "close");
             return request;
         }
     }

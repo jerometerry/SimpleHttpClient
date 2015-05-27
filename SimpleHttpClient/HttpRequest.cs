@@ -21,5 +21,10 @@
         {
             return Encoding.ASCII.GetBytes(this.ToString());
         }
+
+        public void AddHeader(string name, string value)
+        {
+            Headers.Add(name, value);
+        }
     }
 }
