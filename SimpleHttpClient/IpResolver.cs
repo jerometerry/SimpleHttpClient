@@ -8,6 +8,12 @@
     {
         public static IPAddress Resolve(string hostNameOrAddress)
         {
+            IPAddress ip;
+            if (IPAddress.TryParse(hostNameOrAddress, out ip))
+            {
+                return ip;
+            }
+
             var hostEntry = Dns.GetHostEntry(hostNameOrAddress);
             if (hostEntry == null || hostEntry.AddressList.Length == 0)
             {
